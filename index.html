@@ -1,93 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Telegram Mini App Game</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
-      background: linear-gradient(to bottom, #f0f0f0, #d0e6f7);
-    }
-    input, button {
-      padding: 10px;
-      margin: 10px;
-      font-size: 16px;
-    }
-    #gameArea {
-      margin-top: 20px;
-    }
-    .square {
-      width: 50px;
-      height: 50px;
-      background-color: #ff6b6b;
-      display: inline-block;
-      margin: 5px;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Tik-Tok X0 Game</title>
+<style>
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to right, #ff5f6d, #ffc371);
+    min-height: 100vh;
+    margin: 0;
+  }
+  h1 { color: #fff; margin-top: 20px; }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-template-rows: repeat(3, 100px);
+    gap: 10px;
+    margin-top: 30px;
+  }
+  .cell {
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 50px;
+    cursor: pointer;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+  }
+  .cell:hover { transform: scale(1.1); }
+  #scoreboard {
+    margin-top: 20px;
+    color: #fff;
+    font-size: 18px;
+  }
+  #reset {
+    margin-top: 15px;
+    padding: 8px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #ff5f6d;
+    font-weight: bold;
+    transition: 0.2s;
+  }
+  #reset:hover { background-color: #ffe0d4; }
+</style>
 </head>
 <body>
-  <h1>Welcome to the Mini Game!</h1>
 
-  <!-- Ask for user name -->
-  <div id="nameArea">
-    <input type="text" id="userName" placeholder="Enter your name" />
-    <button id="startGame">Start Game</button>
-  </div>
+<h1>Tik-Tok X0 Game</h1>
+<div id="scoreboard">Player: <span id="playerName">Guest</span> | X: 0 | O: 0</div>
+<div id="board"></div>
+<button id="reset">Restart Game</button>
 
-  <!-- Game area -->
-  <div id="gameArea" style="display:none;">
-    <h2>Click the squares!</h2>
-    <div id="squares"></div>
-    <h3>Score: <span id="score">0</span></h3>
-    <button id="sendScore">Send Score to Bot</button>
-  </div>
+<script>
+let player = 'X';
+let scores = { X: 0, O: 0 };
+const board = document.getElementById('board');
 
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+// Ask user name
+const name = prompt("Enter your name:");
+document.getElementById('playerName').textContent = name || "Guest";
 
-    let userName = "";
-    let score = 0;
+// Create 3x3 board
+for(let i=0;i<9;i++){
+  const cell = document.createElement('div');
+  cell.classList.add('cell');
+  cell.addEventListener('click', () => makeMove(cell));
+  board.appendChild(cell);
+}
 
-    const squaresContainer = document.getElementById("squares");
-
-    // Start game button
-    document.getElementById("startGame").addEventListener("click", () => {
-      const nameInput = document.getElementById("userName").value.trim();
-      if(nameInput === "") {
-        alert("Please enter your name!");
-        return;
-      }
-      userName = nameInput;
-      document.getElementById("nameArea").style.display = "none";
-      document.getElementById("gameArea").style.display = "block";
-      createSquares();
-    });
-
-    // Create clickable squares
-    function createSquares() {
-      squaresContainer.innerHTML = "";
-      for(let i=0; i<9; i++) {
-        const square = document.createElement("div");
-        square.classList.add("square");
-        square.addEventListener("click", () => {
-          score++;
-          document.getElementById("score").innerText = score;
-        });
-        squaresContainer.appendChild(square);
-      }
+function makeMove(cell){
+  if(cell.textContent === '') {
+    cell.textContent = player;
+    if(checkWin(player)){
+      alert(player + " wins!");
+      scores[player]++;
+      updateScore();
+      resetBoard();
+    } else if([...board.children].every(c => c.textContent !== '')) {
+      alert("Draw!");
+      resetBoard();
+    } else {
+      player = player === 'X' ? 'O' : 'X';
     }
+  }
+}
 
-    // Send score to Telegram bot
-    document.getElementById("sendScore").addEventListener("click", () => {
-      const data = { name: userName, score: score };
-      tg.sendData(JSON.stringify(data));
-      alert(`Score sent! Name: ${userName}, Score: ${score}`);
-    });
-  </script>
+function checkWin(p){
+  const winPatterns = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+  return winPatterns.some(pattern => 
+    pattern.every(index => board.children[index].textContent === p)
+  );
+}
+
+function updateScore(){
+  document.getElementById('scoreboard').innerHTML = `Player: ${name || "Guest"} | X: ${scores.X} | O: ${scores.O}`;
+}
+
+document.getElementById('reset').addEventListener('click', resetBoard);
+
+function resetBoard(){
+  [...board.children].forEach(c => c.textContent = '');
+  player = 'X';
+}
+</script>
+
 </body>
 </html>
